@@ -108,6 +108,43 @@
     .theme-toggle-auth:hover svg {
       transform: rotate(15deg);
     }
+    .error-msg {
+      color: #dc2626;
+      background: #fee2e2;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    .success-msg {
+      color: #059669;
+      background: #d1fae5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .input-error {
+      border-color: #dc2626 !important;
+    }
   </style>
 </head>
 
@@ -177,22 +214,96 @@
     const emailEl = document.getElementById("reg-email");
     const passwordEl = document.getElementById("reg-password");
     const statusEl = document.getElementById("register-status");
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function showError(message) {
+      statusEl.className = "error-msg";
+      statusEl.textContent = message;
+      statusEl.setAttribute("role", "alert");
+    }
+
+    function showSuccess(message) {
+      statusEl.className = "success-msg";
+      statusEl.textContent = message;
+    }
+
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      if (isLoading) {
+        submitBtn.innerHTML = '<span class="spinner"></span>Creating account...';
+      } else {
+        submitBtn.textContent = originalBtnText;
+      }
+    }
+
+    function clearErrors() {
+      statusEl.className = "status muted";
+      statusEl.textContent = "";
+      emailEl.classList.remove("input-error");
+      passwordEl.classList.remove("input-error");
+    }
+
+    emailEl.addEventListener("input", clearErrors);
+    passwordEl.addEventListener("input", clearErrors);
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      statusEl.textContent = "Creating account…";
+      clearErrors();
+
+      const email = emailEl.value.trim();
+      const password = passwordEl.value;
+
+      if (!email) {
+        emailEl.classList.add("input-error");
+        showError("Please enter your email");
+        emailEl.focus();
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        emailEl.classList.add("input-error");
+        showError("Please enter a valid email address");
+        emailEl.focus();
+        return;
+      }
+
+      if (!password) {
+        passwordEl.classList.add("input-error");
+        showError("Please enter a password");
+        passwordEl.focus();
+        return;
+      }
+
+      if (password.length < 8) {
+        passwordEl.classList.add("input-error");
+        showError("Password must be at least 8 characters");
+        passwordEl.focus();
+        return;
+      }
+
+      setLoading(true);
 
       try {
-        await window.XAYTHEON_AUTH.register(
-          emailEl.value.trim(),
-          passwordEl.value
-        );
-        statusEl.textContent = "Account created. Redirecting to login…";
+        await window.XAYTHEON_AUTH.register(email, password);
+        showSuccess("Account created successfully! Redirecting to login...");
         setTimeout(() => {
           window.location.href = "login.html";
-        }, 1000);
+        }, 1500);
       } catch (err) {
-        statusEl.textContent = err.message || "Registration failed";
+        setLoading(false);
+        if (err.message.includes("fetch") || err.message.includes("network")) {
+          showError("Network error. Please check your connection and try again.");
+        } else if (err.message.includes("exists") || err.message.includes("already")) {
+          emailEl.classList.add("input-error");
+          showError("An account with this email already exists");
+        } else {
+          showError(err.message || "Registration failed. Please try again.");
+        }
       }
     });
   </script>
