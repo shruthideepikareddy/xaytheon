@@ -3,138 +3,333 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in — XAYTHEON</title>
+  <title>Sign in – XAYTHEON</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="style.css" />
+
   <style>
-    body { font-family: 'Eightgon', 'Researcher', 'OriginTech', sans-serif; }
-    .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 40px 16px; }
-    .auth-card { width: 100%; max-width: 420px; background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); padding: 24px; }
-    .auth-title { font-size: 1.8em; margin-bottom: 8px; }
-    .auth-sub { opacity: 0.7; margin-bottom: 20px; }
-    .auth-form { display: grid; gap: 12px; }
-    .auth-form label { font-weight: 600; }
-    .auth-form input { padding: 12px 14px; border: 1px solid rgba(0,0,0,0.2); border-radius: 8px; outline: none; font-size: 1em; }
-    .auth-form input:focus { border-color: #000; }
-    .auth-actions { display: flex; gap: 10px; align-items: center; }
-    .muted { opacity: 0.75; font-size: 0.95em; }
-    .status { min-height: 1.2em; margin-top: 10px; }
-    .center { text-align: center; }
+    body {
+      font-family: 'Eightgon', 'Researcher', 'OriginTech', sans-serif;
+    }
+    .auth-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 40px 16px;
+      background: var(--bg-primary);
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: var(--shadow-md);
+      padding: 24px;
+    }
+    .auth-title {
+      font-size: 1.8em;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .auth-sub {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    .auth-form {
+      display: grid;
+      gap: 12px;
+    }
+    .auth-form label {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .auth-form input {
+      padding: 12px 14px;
+      border: 1px solid var(--border-color-strong);
+      border-radius: 8px;
+      outline: none;
+      font-size: 1em;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: border-color 0.3s ease;
+    }
+    .auth-form input:focus {
+      border-color: var(--text-primary);
+    }
+    .auth-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .muted {
+      color: var(--text-muted);
+      font-size: 0.95em;
+    }
+    .status {
+      min-height: 1.2em;
+      margin-top: 10px;
+    }
+    .center {
+      text-align: center;
+    }
+    .center a {
+      color: var(--link-color);
+      text-decoration: none;
+    }
+    .center a:hover {
+      color: var(--link-hover);
+      text-decoration: underline;
+    }
+    .theme-toggle-auth {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: transparent;
+      border: none;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 6px;
+      border-radius: 8px;
+      z-index: 100;
+    }
+    .theme-toggle-auth:hover {
+      background: var(--border-color);
+      transform: scale(1.05);
+    }
+    .theme-toggle-auth:focus {
+      outline: 2px solid var(--text-primary);
+      outline-offset: 2px;
+    }
+    .theme-toggle-auth svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--text-primary);
+      fill: none;
+      transition: all 0.3s ease;
+    }
+    .theme-toggle-auth:hover svg {
+      transform: rotate(15deg);
+    }
+    .error-msg {
+      color: #dc2626;
+      background: #fee2e2;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    .success-msg {
+      color: #059669;
+      background: #d1fae5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .input-error {
+      border-color: #dc2626 !important;
+    }
   </style>
 </head>
+
 <body>
+  
+  <nav class="navbar">
+    <div class="nav-container">
+      <a class="logo" href="index.html" aria-label="Back to Home">
+        <img class="logo-img" src="assets/logo/thelogo.png" alt="XAYTHEON logo" />
+      </a>
+      <ul class="nav-menu">
+        <li><a class="nav-link" href="index.html">Home</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <button class="theme-toggle-auth" id="theme-toggle-auth" aria-label="Toggle dark mode">
+    <svg class="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  </button>
+  
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-title">Sign in</div>
-      <div class="auth-sub">Use your email to get a magic link</div>
-      <form id="magic-form" class="auth-form" autocomplete="email">
+      <div class="auth-sub">Sign in using your email and password</div>
+
+      <form id="login-form" class="auth-form" autocomplete="on">
         <label for="login-email">Email</label>
         <input id="login-email" type="email" placeholder="you@example.com" required />
+
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" placeholder="••••••••" required />
+
         <div class="auth-actions">
-          <button class="btn btn-primary" type="submit">Send magic link</button>
+          <button class="btn btn-primary" type="submit">Sign in</button>
           <a class="btn btn-outline" href="index.html">Back</a>
         </div>
+
         <div id="login-status" class="status muted" aria-live="polite"></div>
       </form>
-      <div class="center muted" style="margin-top:12px;">We’ll email you a secure sign-in link.</div>
+      
+      <div class="center muted" style="margin-top:12px;">
+        New here?
+        <a href="register.html">Create an account</a>
+      </div>
+
+      <div class="center muted" style="margin-top:12px;">
+        Authentication is handled securely by the Xaytheon backend.
+      </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.44.4/dist/umd/supabase.min.js"></script>
   <script src="auth.js"></script>
   <script>
-    const form = document.getElementById('magic-form');
-    const emailEl = document.getElementById('login-email');
-    const statusEl = document.getElementById('login-status');
-    form.addEventListener('submit', async (e) => {
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('theme-toggle-auth');
+    const htmlElement = document.documentElement;
+    
+    // Load saved theme or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    htmlElement.setAttribute('data-theme', savedTheme);
+    
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = htmlElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      htmlElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    });
+
+    // Login form handling
+    const form = document.getElementById("login-form");
+    const emailEl = document.getElementById("login-email");
+    const passwordEl = document.getElementById("login-password");
+    const statusEl = document.getElementById("login-status");
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function showError(message) {
+      statusEl.className = "error-msg";
+      statusEl.textContent = message;
+      statusEl.setAttribute("role", "alert");
+    }
+
+    function showSuccess(message) {
+      statusEl.className = "success-msg";
+      statusEl.textContent = message;
+    }
+
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      if (isLoading) {
+        submitBtn.innerHTML = '<span class="spinner"></span>Signing in...';
+      } else {
+        submitBtn.textContent = originalBtnText;
+      }
+    }
+
+    function clearErrors() {
+      statusEl.className = "status muted";
+      statusEl.textContent = "";
+      emailEl.classList.remove("input-error");
+      passwordEl.classList.remove("input-error");
+    }
+
+    emailEl.addEventListener("input", clearErrors);
+    passwordEl.addEventListener("input", clearErrors);
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      statusEl.textContent = 'Sending magic link…';
+      clearErrors();
+
+      const email = emailEl.value.trim();
+      const password = passwordEl.value;
+
+      if (!email) {
+        emailEl.classList.add("input-error");
+        showError("Please enter your email");
+        emailEl.focus();
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        emailEl.classList.add("input-error");
+        showError("Please enter a valid email address");
+        emailEl.focus();
+        return;
+      }
+
+      if (!password) {
+        passwordEl.classList.add("input-error");
+        showError("Please enter your password");
+        passwordEl.focus();
+        return;
+      }
+
+      if (password.length < 8) {
+        passwordEl.classList.add("input-error");
+        showError("Password must be at least 8 characters");
+        passwordEl.focus();
+        return;
+      }
+
+      setLoading(true);
+
       try {
-        await window.XAYTHEON_AUTH.sendMagicLink(emailEl.value.trim());
-        statusEl.textContent = 'Check your email for the sign-in link.';
+        await window.XAYTHEON_AUTH.login(email, password);
+        showSuccess("Login successful! Redirecting...");
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 500);
       } catch (err) {
-        statusEl.textContent = 'Failed to send link: ' + (err?.message || 'unknown error');
-      }
-    });
-  </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in — XAYTHEON</title>
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css" />
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.44.4/dist/umd/supabase.min.js"></script>
-  <script defer src="auth.js"></script>
-  <style>
-    .auth-card { max-width: 420px; margin: 140px auto 40px; padding: 24px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); background: #fff; }
-    .auth-card h1 { font-size: 1.8em; margin-bottom: 16px; }
-    .auth-card .muted { margin-top: 8px; }
-    .auth-actions { display: grid; gap: 10px; margin-top: 16px; }
-    .auth-status { margin-top: 12px; min-height: 1.2em; }
-  </style>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const sb = window.sb; // from auth.js
-      const emailInput = document.getElementById('auth-email');
-      const sendLinkBtn = document.getElementById('auth-send-link');
-      const statusEl = document.getElementById('auth-status');
-
-      const redirectTo = (() => {
-        try {
-          const u = new URL(document.referrer || location.origin + '/index.html');
-          // Ensure it points back to our Pages site paths
-          return u.origin + u.pathname;
-        } catch { return location.origin + '/index.html'; }
-      })();
-
-      function setStatus(msg, isError=false) {
-        statusEl.textContent = msg || '';
-        statusEl.style.color = isError ? '#b91c1c' : '#111827';
-      }
-
-      sendLinkBtn.addEventListener('click', async () => {
-        const email = emailInput.value.trim();
-        if (!email) { setStatus('Enter your email to receive a magic link.', true); return; }
-        setStatus('Sending magic link...');
-        try {
-          const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
-          if (error) throw error;
-          setStatus('Check your email for the sign-in link.');
-        } catch (e) {
-          setStatus(e.message || 'Failed to send link', true);
+        setLoading(false);
+        if (err.message.includes("fetch") || err.message.includes("network")) {
+          showError("Network error. Please check your connection and try again.");
+        } else if (err.message.includes("credentials")) {
+          emailEl.classList.add("input-error");
+          passwordEl.classList.add("input-error");
+          showError("Invalid email or password");
+        } else {
+          showError(err.message || "Login failed. Please try again.");
         }
-      });
+      }
     });
   </script>
-  </head>
-<body>
-  <div class="content">
-    <nav class="navbar">
-      <div class="nav-container">
-        <a class="logo" href="index.html" aria-label="Back to Home">
-          <img class="logo-img" src="assets/logo/thelogo.png" alt="XAYTHEON logo" />
-        </a>
-        <ul class="nav-menu">
-          <li><a class="nav-link" href="index.html#home">Home</a></li>
-        </ul>
-      </div>
-    </nav>
-
-    <section class="auth-card">
-      <h1>Sign in</h1>
-      <label for="auth-email">Email for magic link</label>
-      <input id="auth-email" type="email" placeholder="you@example.com" style="padding:12px;border:1px solid rgba(0,0,0,0.2);border-radius:8px;width:100%;margin-top:6px;" />
-      <div class="auth-actions">
-        <button id="auth-send-link" class="btn btn-primary" type="button">Send magic link</button>
-      </div>
-      <div id="auth-status" class="auth-status muted"></div>
-      <p class="muted">We’ll send a login link to your email. After clicking it, you’ll be redirected back.</p>
-    </section>
-  </div>
 </body>
 </html>

@@ -9,6 +9,10 @@ Please read this document carefully before contributing.
 
 ## How to Get Started
 
+**Please make sure to read and follow the Code of Conduct before contributing.*
+
+### Setup Instructions
+
 1. Star the repository (optional but appreciated)
 2. Fork the repository
 3. Clone your fork locally

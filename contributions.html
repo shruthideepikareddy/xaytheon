@@ -22,66 +22,101 @@
           <li><a class="nav-link" href="community.html">Community Highlights</a></li>
           <li><a class="nav-link" href="explore.html">Explore by Topic</a></li>
           <li><a class="nav-link" href="github.html">GitHub Dashboard</a></li>
+          <li>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+              <svg class="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            </button>
+          </li>
           <li id="auth-area"></li>
         </ul>
       </div>
     </nav>
 
-    <section class="github-section">
-      <div class="container">
-        <h2 class="section-title" style="font-family:'Eightgon',sans-serif;">Your Open Source Contributions</h2>
+    <main>
+      <section class="github-section">
+        <div class="container">
+          <h2 class="section-title" style="font-family:'Eightgon',sans-serif;">Your Open Source Contributions</h2>
 
-        <div data-requires-guest class="muted" style="margin-top:10px;">
-          Please <a href="login.html">sign in</a> to add and view your contributions.
-        </div>
+          <div data-requires-guest class="muted" style="margin-top:10px;">
+            Please <a href="login.html">sign in</a> to add and view your contributions.
+          </div>
 
-        <section id="user-contrib" data-requires-auth style="display:none; margin-top:10px;">
-          <div class="card" style="grid-column: 1 / -1;">
-            <div class="card-header"><h3>Manage Contributions</h3></div>
-            <div class="card-body">
-              <form id="contrib-form" class="github-form" autocomplete="off" style="margin-bottom:20px;">
-                <div class="field-group" style="grid-column: span 4;">
-                  <label>Project Name</label>
-                  <input id="cf-project" type="text" placeholder="e.g. Chat-Real" required />
-                </div>
-                <div class="field-group" style="grid-column: span 4;">
-                  <label>Repository / PR Link</label>
-                  <input id="cf-link" type="url" placeholder="https://github.com/owner/repo or PR URL" required />
-                </div>
-                <div class="field-group" style="grid-column: span 4;">
-                  <label>Event / Program</label>
-                  <input id="cf-program" type="text" placeholder="Hacktoberfest, GSSoC, ..." />
-                </div>
-                <div class="field-group" style="grid-column: span 6;">
-                  <label>Date</label>
-                  <input id="cf-date" type="date" />
-                </div>
-                <div class="field-group" style="grid-column: span 6;">
-                  <label>Type</label>
-                  <input id="cf-type" type="text" placeholder="Bug fix, Docs, Feature, Design" />
-                </div>
-                <div class="field-group" style="grid-column: span 12;">
-                  <label>Description</label>
-                  <input id="cf-desc" type="text" placeholder="What did you contribute?" />
-                </div>
-                <div class="field-group" style="grid-column: span 8;">
-                  <label>Tech Stack</label>
-                  <input id="cf-tech" type="text" placeholder="React, Node, Python..." />
-                </div>
-                <div class="field-group" style="grid-column: span 4;">
-                  <label>Screenshot</label>
-                  <input id="cf-shot" type="file" accept="image/*" />
-                </div>
-                <button class="btn btn-primary" type="submit" style="grid-column: span 3;">Save Contribution</button>
-                <div id="contrib-status" class="github-status" style="grid-column: 1 / -1;"></div>
-              </form>
+          <section id="user-contrib" data-requires-auth style="display:none; margin-top:10px;">
+            <div class="card" style="grid-column: 1 / -1;">
+              <div class="card-header"><h3>Manage Contributions</h3></div>
+              <div class="card-body">
+                <form id="contrib-form" class="github-form" autocomplete="off" style="margin-bottom:20px;">
+                  <div class="field-group" style="grid-column: span 4;">
+                    <label>Project Name</label>
+                    <input id="cf-project" type="text" placeholder="e.g. Chat-Real" required />
+                  </div>
+                  <div class="field-group" style="grid-column: span 4;">
+                    <label>Repository / PR Link</label>
+                    <input id="cf-link" type="url" placeholder="https://github.com/owner/repo or PR URL" required />
+                  </div>
+                  <div class="field-group" style="grid-column: span 4;">
+                    <label>Event / Program</label>
+                    <input id="cf-program" type="text" placeholder="Hacktoberfest, GSSoC, ..." />
+                  </div>
+                  <div class="field-group" style="grid-column: span 6;">
+                    <label>Date</label>
+                    <input id="cf-date" type="date" />
+                  </div>
+                  <div class="field-group" style="grid-column: span 6;">
+                    <label>Type</label>
+                    <input id="cf-type" type="text" placeholder="Bug fix, Docs, Feature, Design" />
+                  </div>
+                  <div class="field-group" style="grid-column: span 12;">
+                    <label>Description</label>
+                    <input id="cf-desc" type="text" placeholder="What did you contribute?" />
+                  </div>
+                  <div class="field-group" style="grid-column: span 8;">
+                    <label>Tech Stack</label>
+                    <input id="cf-tech" type="text" placeholder="React, Node, Python..." />
+                  </div>
+                  <div class="field-group" style="grid-column: span 4;">
+                    <label>Screenshot</label>
+                    <input id="cf-shot" type="file" accept="image/*" />
+                  </div>
+                  <button class="btn btn-primary" type="submit" style="grid-column: span 3;">Save Contribution</button>
+                  <div id="contrib-status" class="github-status" style="grid-column: 1 / -1;"></div>
+                </form>
 
-              <div id="contrib-list" class="repo-list"></div>
+                <div id="contrib-list" class="repo-list"></div>
+              </div>
             </div>
+
           </div>
         </section>
       </div>
     </section>
+    
+    <div class="cursor-container">
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+    </div>
+
+          </section>
+        </div>
+      </section>
+    </main>
+ 
 
     <footer class="footer">
       <div class="container">
@@ -99,5 +134,6 @@
   </div>
 
   <script src="contributions.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

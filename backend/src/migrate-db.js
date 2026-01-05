@@ -1,0 +1,92 @@
+/**
+ * Database Migration Script
+ * Adds refresh_token and timestamp columns to existing users table
+ * 
+ * Run this script if you have an existing database:
+ * node migrate-db.js
+ */
+
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
+
+const dbPath = path.join(__dirname, "users.db");
+const db = new sqlite3.Database(dbPath);
+
+console.log("🔄 Starting database migration...\n");
+
+db.serialize(() => {
+  // Check if columns already exist
+  db.all("PRAGMA table_info(users)", (err, columns) => {
+    if (err) {
+      console.error("❌ Error reading table info:", err);
+      return;
+    }
+
+    const columnNames = columns.map(col => col.name);
+    const hasRefreshToken = columnNames.includes("refresh_token");
+    const hasCreatedAt = columnNames.includes("created_at");
+    const hasUpdatedAt = columnNames.includes("updated_at");
+
+    if (hasRefreshToken && hasCreatedAt && hasUpdatedAt) {
+      console.log("✅ Database is already up to date!");
+      db.close();
+      return;
+    }
+
+    console.log("📋 Current columns:", columnNames.join(", "));
+    console.log("\n🔧 Applying migrations...\n");
+
+    // Add refresh_token column
+    if (!hasRefreshToken) {
+      db.run(
+        "ALTER TABLE users ADD COLUMN refresh_token TEXT",
+        (err) => {
+          if (err) {
+            console.error("❌ Error adding refresh_token column:", err);
+          } else {
+            console.log("✅ Added refresh_token column");
+          }
+        }
+      );
+    }
+
+    // Add created_at column
+    if (!hasCreatedAt) {
+      db.run(
+        "ALTER TABLE users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP",
+        (err) => {
+          if (err) {
+            console.error("❌ Error adding created_at column:", err);
+          } else {
+            console.log("✅ Added created_at column");
+          }
+        }
+      );
+    }
+
+    // Add updated_at column
+    if (!hasUpdatedAt) {
+      db.run(
+        "ALTER TABLE users ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP",
+        (err) => {
+          if (err) {
+            console.error("❌ Error adding updated_at column:", err);
+          } else {
+            console.log("✅ Added updated_at column");
+          }
+
+          // After all migrations, verify the schema
+          db.all("PRAGMA table_info(users)", (err, newColumns) => {
+            if (err) {
+              console.error("❌ Error verifying migration:", err);
+            } else {
+              console.log("\n📋 Updated columns:", newColumns.map(col => col.name).join(", "));
+              console.log("\n✅ Migration completed successfully!");
+            }
+            db.close();
+          });
+        }
+      );
+    }
+  });
+});

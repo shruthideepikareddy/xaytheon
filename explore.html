@@ -24,6 +24,21 @@
           <li><a class="nav-link" href="github.html">GitHub Dashboard</a></li>
           <li><a class="nav-link" href="community.html">Community Highlights</a></li>
           <li><a class="nav-link" href="contributions.html">Contributions</a></li>
+          <li>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+              <svg class="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            </button>
+          </li>
           <li id="auth-area"></li>
         </ul>
       </div>
@@ -61,17 +76,37 @@
           <div id="ex-status" class="github-status" aria-live="polite"></div>
         </form>
 
+      <div class="view-toggle" style="display:flex; gap:8px; margin-bottom:12px;">
+        <button class="btn " id="view-graph-btn">Graph View</button>
+        <button class="btn " id="view-list-btn">List View</button>
+      </div>
+
         <div class="card" style="grid-column: 1 / -1;">
           <div class="card-header"><h3>Topic Map</h3></div>
           <div class="card-body">
-            <div id="graph-wrap" style="width:100%; height:560px; position:relative; border:1px solid rgba(0,0,0,0.1); border-radius:10px; overflow:hidden;">
+            <div id="graph-view">
+                <div id="graph-wrap" style="width:100%; height:560px; position:relative; border:1px solid var(--border-color); border-radius:10px; overflow:hidden;">
               <svg id="graph" width="100%" height="100%"></svg>
-              <div id="graph-legend" style="position:absolute; right:12px; top:12px; background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:8px; padding:8px 10px; font-size:12px;">
+              <div id="graph-legend" style="position:absolute; right:12px; top:12px; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; font-size:12px;">
                 <div><span style="display:inline-block;width:10px;height:10px;background:#0ea5e9;border-radius:50%;margin-right:6px;"></span>Topic</div>
-                <div><span style="display:inline-block;width:10px;height:10px;background:#111827;border-radius:50%;margin-right:6px;"></span>Repo</div>
+                <div><span style="display:inline-block;width:10px;height:10px;background:var(--text-primary);border-radius:50%;margin-right:6px;"></span>Repo</div>
               </div>
             </div>
           </div>
+          <div id="list-view" style="display:none;">
+  <table class="repo-table" style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th align="left">Repository</th>
+        <th align="left">Topic</th>
+        <th align="left">Language</th>
+        <th align="right">Stars</th>
+      </tr>
+    </thead>
+    <tbody id="repo-list"></tbody>
+  </table>
+</div>
+
         </div>
       </div>
     </section>
@@ -92,5 +127,6 @@
   </div>
 
   <script src="explore.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

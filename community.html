@@ -10,6 +10,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.44.4/dist/umd/supabase.min.js"></script>
   <script defer src="auth.js"></script>
 </head>
+<button id="scrollTopBtn" aria-label="Scroll to top">
+  ↑
+</button>
 <body class="eightgon-page">
   <div class="content">
     <nav class="navbar">
@@ -22,61 +25,94 @@
           <li><a class="nav-link" href="github.html">GitHub Dashboard</a></li>
           <li><a class="nav-link" href="contributions.html">Contributions</a></li>
           <li><a class="nav-link" href="explore.html">Explore by Topic</a></li>
+          <li>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+              <svg class="theme-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+            </button>
+          </li>
           <li id="auth-area"></li>
         </ul>
       </div>
     </nav>
 
-    <section class="github-section">
-      <div class="container">
-        <h2 class="section-title" style="font-family:'Eightgon',sans-serif;">Community Highlights</h2>
+    <main>
+      <section class="github-section">
+        <div class="container">
+          <h2 class="section-title" style="font-family:'Eightgon',sans-serif;">Community Highlights</h2>
 
-        <div class="card" style="grid-column: 1 / -1;">
-          <div class="card-header">
-            <h3>Trending Now</h3>
-          </div>
-          <div class="card-body">
-            <form id="trend-form" class="github-form" autocomplete="off" style="margin-bottom: 16px;">
-              <div class="field-group" style="grid-column: span 3;">
-                <label for="trend-lang">Language</label>
-                <select id="trend-lang">
-                  <option value="">Any</option>
-                  <option>JavaScript</option>
-                  <option>TypeScript</option>
-                  <option>Python</option>
-                  <option>Go</option>
-                  <option>Rust</option>
-                  <option>Java</option>
-                  <option>C#</option>
-                  <option>C++</option>
-                </select>
-              </div>
-              <div class="field-group" style="grid-column: span 3;">
-                <label for="trend-topic">Topic</label>
-                <input id="trend-topic" type="text" placeholder="e.g. threejs, vite" />
-              </div>
-              <div class="field-group" style="grid-column: span 3;">
-                <label for="trend-window">Time Window</label>
-                <select id="trend-window">
-                  <option value="30">Last 30 days</option>
-                  <option value="7">Last 7 days</option>
-                  <option value="90">Last 90 days</option>
-                </select>
-              </div>
-              <div class="field-group" style="grid-column: span 3;">
-                <label for="trend-k">Top K</label>
-                <input id="trend-k" type="number" min="1" max="20" value="10" />
-              </div>
-              <button class="btn btn-primary" type="submit">Update</button>
-              <button class="btn btn-outline" type="button" id="trend-reset">Reset</button>
-              <div id="trend-status" class="github-status" aria-live="polite"></div>
-            </form>
+          <div class="card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+              <h3>Trending Now</h3>
+            </div>
+            <div class="card-body">
+              <form id="trend-form" class="github-form" autocomplete="off" style="margin-bottom: 16px;">
+                <div class="field-group" style="grid-column: span 3;">
+                  <label for="trend-lang">Language</label>
+                  <select id="trend-lang">
+                    <option value="">Any</option>
+                    <option>JavaScript</option>
+                    <option>TypeScript</option>
+                    <option>Python</option>
+                    <option>Go</option>
+                    <option>Rust</option>
+                    <option>Java</option>
+                    <option>C#</option>
+                    <option>C++</option>
+                  </select>
+                </div>
+                <div class="field-group" style="grid-column: span 3;">
+                  <label for="trend-topic">Topic</label>
+                  <input id="trend-topic" type="text" placeholder="e.g. threejs, vite" />
+                </div>
+                <div class="field-group" style="grid-column: span 3;">
+                  <label for="trend-window">Time Window</label>
+                  <select id="trend-window">
+                    <option value="30">Last 30 days</option>
+                    <option value="7">Last 7 days</option>
+                    <option value="90">Last 90 days</option>
+                  </select>
+                </div>
+                <div class="field-group" style="grid-column: span 3;">
+                  <label for="trend-k">Top K</label>
+                  <input id="trend-k" type="number" min="1" max="20" value="10" />
+                </div>
+                <button class="btn btn-primary" type="submit">Update</button>
+                <button class="btn btn-outline" type="button" id="trend-reset">Reset</button>
+                <div id="trend-status" class="github-status" aria-live="polite"></div>
+              </form>
 
-            <div id="trend-results" class="repo-list"></div>
+              <div id="trend-results" class="repo-list"></div>
+            </div>
           </div>
         </div>
+
       </div>
     </section>
+    <div class="cursor-container">
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+      <span class="cursor-dot"></span>
+    </div>
+
+
+      </section>
+    </main>
+
 
     <footer class="footer">
       <div class="container">
@@ -94,5 +130,6 @@
   </div>
 
   <script src="community.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
