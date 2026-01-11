@@ -87,6 +87,12 @@ body {
   --link-color: #93c5fd;
   --link-hover: #bfdbfe;
 }
+/* Dark mode: make eye icon visible */
+[data-theme="dark"] .toggle-password img {
+  filter: invert(1);
+}
+
+
 
 /* Reset and Base Styles */
 @font-face {
