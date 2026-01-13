@@ -48,7 +48,7 @@ exports.findById = (id) =>
     }
 
     db.get(
-      "SELECT id, email, view_history FROM users WHERE id = ?",
+      "SELECT id, email, view_history, refresh_token FROM users WHERE id = ?",
       [userId],
       (err, row) => {
         if (err) reject(err);

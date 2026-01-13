@@ -106,8 +106,8 @@ exports.login = async (req, res) => {
 
 exports.refresh = async (req, res) => {
   try {
-    // Try cookie first, then body (for non-cookie envs like file://)
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    // Try body first (explicit user intent), then cookie
+    const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({ message: "Refresh token not found" });
@@ -181,16 +181,16 @@ exports.forgotPassword = async (req, res) => {
     const sanitizedEmail = validateEmail(email);
 
     const user = await User.findByEmail(sanitizedEmail);
-    
+
     if (!user) {
       console.log(`Password reset requested for non-existent email: ${sanitizedEmail}`);
-      return res.status(200).json({ 
-        message: "If an account exists with this email, you will receive a password reset link shortly." 
+      return res.status(200).json({
+        message: "If an account exists with this email, you will receive a password reset link shortly."
       });
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    
+
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
@@ -207,13 +207,13 @@ exports.forgotPassword = async (req, res) => {
       console.error("Failed to send reset email:", emailError);
 
       await User.clearResetToken(user.id);
-      return res.status(500).json({ 
-        message: "Failed to send password reset email. Please try again later." 
+      return res.status(500).json({
+        message: "Failed to send password reset email. Please try again later."
       });
     }
 
-    res.status(200).json({ 
-      message: "If an account exists with this email, you will receive a password reset link shortly." 
+    res.status(200).json({
+      message: "If an account exists with this email, you will receive a password reset link shortly."
     });
   } catch (err) {
     console.error("Forgot password error:", err);
@@ -222,8 +222,8 @@ exports.forgotPassword = async (req, res) => {
       return res.status(err.statusCode).json({ message: err.message, field: err.field });
     }
 
-    res.status(500).json({ 
-      message: "An error occurred. Please try again later." 
+    res.status(500).json({
+      message: "An error occurred. Please try again later."
     });
   }
 };
@@ -246,8 +246,8 @@ exports.resetPassword = async (req, res) => {
     const user = await User.findByResetToken(hashedToken);
 
     if (!user) {
-      return res.status(400).json({ 
-        message: "Invalid or expired reset token. Please request a new password reset." 
+      return res.status(400).json({
+        message: "Invalid or expired reset token. Please request a new password reset."
       });
     }
 
@@ -255,10 +255,10 @@ exports.resetPassword = async (req, res) => {
     const expiresAt = new Date(user.password_reset_expires);
 
     if (now > expiresAt) {
- 
+
       await User.clearResetToken(user.id);
-      return res.status(400).json({ 
-        message: "Reset token has expired. Please request a new password reset." 
+      return res.status(400).json({
+        message: "Reset token has expired. Please request a new password reset."
       });
     }
 
@@ -274,8 +274,8 @@ exports.resetPassword = async (req, res) => {
 
     console.log(`Password successfully reset for user: ${user.email}`);
 
-    res.status(200).json({ 
-      message: "Password reset successfully. You can now log in with your new password." 
+    res.status(200).json({
+      message: "Password reset successfully. You can now log in with your new password."
     });
   } catch (err) {
     console.error("Reset password error:", err);
@@ -284,8 +284,8 @@ exports.resetPassword = async (req, res) => {
       return res.status(err.statusCode).json({ message: err.message, field: err.field });
     }
 
-    res.status(500).json({ 
-      message: "Failed to reset password. Please try again." 
+    res.status(500).json({
+      message: "Failed to reset password. Please try again."
     });
   }
 };
