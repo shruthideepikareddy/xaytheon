@@ -12,21 +12,7 @@ const analyticsRoutes = require("./routes/analytics.routes");
 const app = express();
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or file://)
-    if (!origin) return callback(null, true);
-
-    // Allow any localhost origin
-    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-      return callback(null, true);
-    }
-
-    if (origin === process.env.FRONTEND_URL) {
-      return callback(null, true);
-    }
-
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: true, // Allow all origins (simpler for local dev with varying ports)
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

@@ -1,48 +1,45 @@
+// Ensure global namespace exists immediately
+window.XAYTHEON_AUTH = window.XAYTHEON_AUTH || {};
+
 (function () {
-  const API_BASE_URL = window.location.protocol === "https:"
-    ? "https://your-api-domain.com/api/auth"
-    : "http://localhost:5000/api/auth";
+  console.log("Xaytheon Auth Script Loaded"); // Debug log
+
+  // For local dev, using 127.0.0.1 is safer than localhost to avoid IPv6 issues
+  const API_BASE_URL = "http://127.0.0.1:5000/api/auth";
 
   const REQUEST_TIMEOUT = 30000;
 
-  async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT) {
+  async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = REQUEST_TIMEOUT } = options;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        throw new Error('Request timeout. Please check your connection.');
-      }
-      throw err;
-    }
+    const id = setTimeout(() => controller.abort(), timeout);
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
   }
 
   let accessToken = null;
   let currentUser = null;
   let tokenExpiryTime = null;
   let refreshTimer = null;
+  let lastAuthError = null;
 
   function setAccessToken(token, expiresIn, user) {
     accessToken = token;
     if (user) currentUser = user;
     tokenExpiryTime = Date.now() + (expiresIn - 60) * 1000;
+    lastAuthError = null; // Clear error on success
     scheduleTokenRefresh();
     window.dispatchEvent(new CustomEvent('xaytheon:authchange', { detail: { user: currentUser } }));
   }
 
-  async function getSession() {
-    if (!accessToken) return null;
+  function getSession() {
     return {
-      access_token: accessToken,
-      user: currentUser
+      user: currentUser,
+      accessToken: accessToken,
     };
   }
 
@@ -50,27 +47,14 @@
     accessToken = null;
     currentUser = null;
     tokenExpiryTime = null;
-    localStorage.removeItem("x_refresh_token"); // Clear persistence
-    if (refreshTimer) {
-      clearTimeout(refreshTimer);
-      refreshTimer = null;
-    }
+    if (refreshTimer) clearTimeout(refreshTimer);
+    localStorage.removeItem("x_refresh_token");
     window.dispatchEvent(new CustomEvent('xaytheon:authchange', { detail: { user: null } }));
-  }
-
-  function getAccessToken() {
-    return accessToken;
-  }
-
-  function isTokenExpiringSoon() {
-    if (!tokenExpiryTime) return true;
-    return Date.now() >= tokenExpiryTime;
   }
 
   async function refreshAccessToken() {
     try {
       const storedRefreshToken = localStorage.getItem("x_refresh_token");
-      const isFileProtocol = window.location.protocol === 'file:';
 
       const options = {
         method: "POST",
@@ -79,8 +63,6 @@
 
       if (storedRefreshToken) {
         options.body = JSON.stringify({ refreshToken: storedRefreshToken });
-        // On file protocol, avoiding credentials helps avoid some CORS/cookie strictness
-        // On http/https, we can include them, but it's not strictly necessary if body has token
       } else {
         options.credentials = "include";
       }
@@ -102,15 +84,17 @@
       return true;
     } catch (err) {
       console.warn("Session restore failed:", err);
+      lastAuthError = err.message; // Capture error for UI
+
       if (!err.message.includes("Network")) {
-        // If the token is definitely invalid (401 from backend), clear it.
-        // If it's a network error (server down), keep it to try again later.
         if (err.message.includes("Invalid") || err.message.includes("expired") || err.message.includes("not found")) {
-          clearAccessToken();
-          renderAuthArea();
-          applyAuthGating();
+          // Only clear if explicitly invalid, but keep error for display
+          accessToken = null;
+          currentUser = null;
+          localStorage.removeItem("x_refresh_token");
         }
       }
+      renderAuthArea(); // Update UI to show error
       return false;
     }
   }
@@ -323,6 +307,8 @@
         await refreshAccessToken();
       } catch (err) {
         console.log("No existing session restored");
+        lastAuthError = err.message;
+        renderAuthArea();
       }
     }
   }
@@ -332,8 +318,19 @@
     if (!container) return;
 
     if (!isAuthenticated()) {
-      container.innerHTML =
-        '<a class="btn btn-outline" href="login.html">Sign in</a>';
+      if (lastAuthError) {
+        // Show error next to sign in button
+        container.innerHTML = `
+           <div style="display:flex; align-items:center; gap:10px;">
+             <span style="color:#ef4444; font-size:11px; max-width:150px; line-height:1.2;">
+               ${lastAuthError}
+             </span>
+             <a class="btn btn-outline" href="login.html">Sign in</a>
+           </div>
+         `;
+      } else {
+        container.innerHTML = '<a class="btn btn-outline" href="login.html">Sign in</a>';
+      }
       return;
     }
 
@@ -353,11 +350,13 @@
     const dd = document.getElementById("user-dropdown");
     const signOutBtn = document.getElementById("sign-out-btn");
 
-    btn.addEventListener("click", () => {
-      dd.toggleAttribute("hidden");
-    });
+    if (btn && dd && signOutBtn) {
+      btn.addEventListener("click", () => {
+        dd.toggleAttribute("hidden");
+      });
 
-    signOutBtn.addEventListener("click", logout);
+      signOutBtn.addEventListener("click", logout);
+    }
   }
 
   function applyAuthGating() {
@@ -372,41 +371,16 @@
       .forEach((el) => (el.style.display = authed ? "none" : ""));
   }
 
-  // Login with email + password
-  async function login(email, password){
-    const c = ensureClient();
-    if (!c) throw new Error('Supabase not available');
-    const { data, error } = await c.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
-  }
-
-  // Sign up with email + password
-  async function signup(email, password){
-    const c = ensureClient();
-    if (!c) throw new Error('Supabase not available');
-    const { data, error } = await c.auth.signUp({ email, password });
-    if (error) throw error;
-    return data;
-  }
-
-  // Expose a helper for login page to trigger magic link
-  async function sendMagicLink(email){
-    const c = ensureClient();
-    if (!c) throw new Error('Supabase not available');
-    const redirectTo = computeRedirectTo();
-    const { error } = await c.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo }
-    });
-    if (error) throw error;
-    return true;
-  }
-
-  window.XAYTHEON_AUTH = { ensureClient, getSession, handleAuthState, sendMagicLink, login, signup };
+  // Assign methods to the global object
+  Object.assign(window.XAYTHEON_AUTH, {
+    getSession,
+    login,
+    register,
+    logout,
+    authenticatedFetch
+  });
 
   window.addEventListener("DOMContentLoaded", async () => {
-    enforceHttps();
     await restoreSession();
     renderAuthArea();
     applyAuthGating();
@@ -417,81 +391,81 @@
   });
 
   // Ensure XAYTHEON_AUTH exists
-window.XAYTHEON_AUTH = window.XAYTHEON_AUTH || {};
+  window.XAYTHEON_AUTH = window.XAYTHEON_AUTH || {};
 
-/**
- * Request password reset (forgot password)
- * @param {string} email - User's email address
- */
-window.XAYTHEON_AUTH.forgotPassword = async function(email) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/forgot-password`, {  
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+  /**
+   * Request password reset (forgot password)
+   * @param {string} email - User's email address
+   */
+  window.XAYTHEON_AUTH.forgotPassword = async function (email) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to send reset email");
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send reset email");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      throw error;
     }
+  };
 
-    return data;
-  } catch (error) {
-    console.error("Forgot password error:", error);
-    throw error;
-  }
-};
+  /**
+   * Reset password using token
+   * @param {string} token - Reset token from email
+   * @param {string} newPassword - New password
+   */
+  window.XAYTHEON_AUTH.resetPassword = async function (token, newPassword) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword }),
+      });
 
-/**
- * Reset password using token
- * @param {string} token - Reset token from email
- * @param {string} newPassword - New password
- */
-window.XAYTHEON_AUTH.resetPassword = async function(token, newPassword) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/reset-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, newPassword }),
-    });
+      const data = await response.json();
 
-    const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to reset password");
+      }
 
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to reset password");
+      return data;
+    } catch (error) {
+      console.error("Reset password error:", error);
+      throw error;
     }
+  };
 
-    return data;
-  } catch (error) {
-    console.error("Reset password error:", error);
-    throw error;
-  }
-};
+  /**
+   * Validate reset token
+   * @param {string} token - Reset token to validate
+   */
+  window.XAYTHEON_AUTH.validateResetToken = async function (token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/validate-reset-token?token=${encodeURIComponent(token)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
 
-/**
- * Validate reset token
- * @param {string} token - Reset token to validate
- */
-window.XAYTHEON_AUTH.validateResetToken = async function(token) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/validate-reset-token?token=${encodeURIComponent(token)}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
+      const data = await response.json();
 
-    const data = await response.json();
+      if (!response.ok || !data.valid) {
+        throw new Error(data.message || "Invalid token");
+      }
 
-    if (!response.ok || !data.valid) {
-      throw new Error(data.message || "Invalid token");
+      return data;
+    } catch (error) {
+      console.error("Validate token error:", error);
+      throw error;
     }
-
-    return data;
-  } catch (error) {
-    console.error("Validate token error:", error);
-    throw error;
-  }
-};
+  };
 
 })();

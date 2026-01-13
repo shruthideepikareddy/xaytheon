@@ -14,6 +14,9 @@ db.run(`
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     refresh_token TEXT,
+    view_history TEXT DEFAULT '[]',
+    password_reset_token TEXT,
+    password_reset_expires DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
