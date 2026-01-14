@@ -20,6 +20,7 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css" />
   <style>
+    /* Section Title - Theme support */
     .section-title {
       font-family: VT323;
       font-size: 60px;
@@ -30,6 +31,16 @@
       text-align: center;
     }
 
+    [data-theme="light"] .section-title {
+      color: #000;
+    }
+
+    [data-theme="dark"] .section-title,
+    html:not([data-theme]) .section-title {
+      color: #fff;
+    }
+
+    /* Navbar - Always black with white text */
     .navbar {
       background-color: #000;
     }
@@ -47,40 +58,108 @@
       filter: brightness(0) invert(1);
     }
 
-    #gh-username::placeholder {
-      color: rgba(0, 0, 0, 0.6);
-    }
-
-    #gh-username:focus {
-      border-color: rgba(0, 0, 0, 0.6);
-      box-shadow:
-        0 0 0 3px rgba(0, 0, 0, 0.1),
-        0 12px 28px rgba(0, 0, 0, 0.12);
-    }
-
-    #gh-username {
+    /* Light mode input styles */
+    [data-theme="light"] #gh-username {
       background: rgba(99, 102, 241, 0.12);
-      /* accent tint */
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-
       border: 1px solid rgba(99, 102, 241, 0.25);
       border-radius: 14px;
-
       color: #000;
     }
 
-    /* =========================
-    PROFILE CARD ANIMATION
-    ========================= */
+    [data-theme="light"] #gh-username::placeholder {
+      color: rgba(0, 0, 0, 0.5);
+    }
 
+    [data-theme="light"] #gh-username:focus {
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.1),
+        0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Dark mode input styles */
+    [data-theme="dark"] #gh-username,
+    html:not([data-theme]) #gh-username {
+      background: rgba(99, 102, 241, 0.15);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 14px;
+      color: #fff;
+    }
+
+    [data-theme="dark"] #gh-username::placeholder,
+    html:not([data-theme]) #gh-username::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    [data-theme="dark"] #gh-username:focus,
+    html:not([data-theme]) #gh-username:focus {
+      border-color: rgba(99, 102, 241, 0.6);
+      box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.2),
+        0 12px 28px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Label theming */
+    [data-theme="light"] label {
+      color: #000;
+    }
+
+    [data-theme="dark"] label,
+    html:not([data-theme]) label {
+      color: #fff;
+    }
+
+    /* Status message theming */
+    [data-theme="light"] #github-status {
+      color: #000;
+    }
+
+    [data-theme="dark"] #github-status,
+    html:not([data-theme]) #github-status {
+      color: #fff;
+    }
+
+    /* Muted text theming */
+    [data-theme="light"] .muted {
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    [data-theme="dark"] .muted,
+    html:not([data-theme]) .muted {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Profile name theming */
+    [data-theme="light"] .profile-name {
+      color: #000;
+    }
+
+    [data-theme="dark"] .profile-name,
+    html:not([data-theme]) .profile-name {
+      color: #fff;
+    }
+
+    /* Card header theming */
+    [data-theme="light"] .card-header h3 {
+      color: #000;
+    }
+
+    [data-theme="dark"] .card-header h3,
+    html:not([data-theme]) .card-header h3 {
+      color: #fff;
+    }
+
+    /* Profile card animation */
     .profile-card {
       position: relative;
       overflow: hidden;
       min-height: 320px;
     }
 
-    /* --- Base layout (before hover) --- */
     .profile-row {
       display: flex;
       flex-direction: column;
@@ -88,58 +167,44 @@
       text-align: center;
       gap: 10px;
       padding-bottom: 60px;
-
       transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
       will-change: transform;
     }
 
-    /* Avatar */
     .avatar {
       width: 96px;
       height: 96px;
       border-radius: 50%;
       object-fit: cover;
-
       transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
       will-change: transform;
     }
 
-    /* Hide secondary text initially */
     .profile-login,
     .profile-bio {
       opacity: 0;
       transform: translateY(6px);
       max-width: 100%;
       word-wrap: break-word;
-
       transition:
         opacity 0.45s ease 0.15s,
         transform 0.45s ease 0.15s;
-
       will-change: opacity, transform;
     }
 
-    /* Stats hidden & removed from flow */
     .profile-stats {
       position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translate(-50%, 20px);
       opacity: 0;
-
       display: flex;
       gap: 28px;
-
       transition:
         opacity 0.6s ease 0.2s,
         transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
-
       will-change: opacity, transform;
     }
-
-    /* =========================
-    HOVER STATE
-    ========================= */
 
     .profile-card:hover .profile-row {
       flex-direction: row;
@@ -166,6 +231,171 @@
     .profile-card:hover .profile-stats {
       opacity: 1;
       transform: translate(-50%, 0);
+    }
+
+    /* GitHub Grid Layout */
+    .github-grid {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 1200px) {
+      .github-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* History Tracker Styles */
+    .history-tracker {
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+
+    .trend-card {
+      margin-bottom: 16px;
+    }
+
+    .metric-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="light"] .metric-item {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-item:last-child {
+      border-bottom: none;
+    }
+
+    .metric-label {
+      font-size: 14px;
+    }
+
+    [data-theme="light"] .metric-label {
+      color: rgba(0, 0, 0, 0.7);
+    }
+
+    [data-theme="dark"] .metric-label,
+    html:not([data-theme]) .metric-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .metric-value-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .metric-current {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .metric-trend {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .metric-trend.up {
+      color: #22c55e;
+      background: rgba(34, 197, 94, 0.15);
+    }
+
+    .metric-trend.down {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .metric-trend.neutral {
+      color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="light"] .metric-trend.neutral {
+      color: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .history-chart {
+      width: 100%;
+      height: 200px;
+      margin-top: 16px;
+    }
+
+    .snapshot-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .snapshot-item {
+      padding: 12px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    [data-theme="light"] .snapshot-item {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .snapshot-date {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    [data-theme="light"] .snapshot-date {
+      color: rgba(0, 0, 0, 0.9);
+    }
+
+    [data-theme="dark"] .snapshot-date,
+    html:not([data-theme]) .snapshot-date {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .snapshot-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    [data-theme="light"] .snapshot-metrics {
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    [data-theme="dark"] .snapshot-metrics,
+    html:not([data-theme]) .snapshot-metrics {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .clear-history-btn {
+      width: 100%;
+      padding: 8px;
+      margin-top: 12px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .clear-history-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
     }
   </style>
 </head>
@@ -212,16 +442,11 @@
         <div class="container">
           <div class="github-header">
             <h2 class="section-title">GitHub Dashboard</h2>
-            <div class="mini-3d" aria-hidden="true">
-              <canvas id="mini-3d-canvas"></canvas>
-              <div class="mini-3d-loading">Loading…</div>
-            </div>
           </div>
 
           <form id="github-form" class="github-form" autocomplete="off">
             <div id="gh-error" class="muted"></div>
 
-            <!-- Rate Limit Info Box -->
             <div id="gh-rate-limit-warning"
               style="display: none; padding: 12px; margin-bottom: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; color: #92400e;">
               <strong>⚠️ Rate Limit Notice:</strong>
@@ -239,103 +464,131 @@
           </form>
 
           <div class="github-grid">
-            <div class="card profile-card" id="gh-profile">
-              <div class="card-header">
-                <h3>Profile</h3>
+            <!-- Left Column: Profile & Activity -->
+            <div>
+              <div class="card profile-card" id="gh-profile">
+                <div class="card-header">
+                  <h3>Profile</h3>
+                </div>
+                <div class="card-body">
+                  <div class="profile-row">
+                    <img id="gh-avatar" alt="Avatar" class="avatar" />
+                    <div>
+                      <div class="profile-name" id="gh-name">—</div>
+                      <div class="profile-login" id="gh-login">—</div>
+                      <div class="profile-bio" id="gh-bio"></div>
+                    </div>
+                  </div>
+                  <div class="profile-stats">
+                    <div><span id="gh-followers">0</span><label>Followers</label></div>
+                    <div><span id="gh-following">0</span><label>Following</label></div>
+                    <div><span id="gh-repos-count">0</span><label>Repos</label></div>
+                  </div>
+                </div>
               </div>
-              <div class="card-body">
-                <div class="profile-row">
-                  <img id="gh-avatar" alt="Avatar" class="avatar" />
-                  <div>
-                    <div class="profile-name" id="gh-name">—</div>
-                    <div class="profile-login" id="gh-login">—</div>
-                    <div class="profile-bio" id="gh-bio"></div>
-                  </div>
-                </div>
-                <div class="profile-stats">
-                  <div><span id="gh-followers">0</span><label>Followers</label></div>
-                  <div><span id="gh-following">0</span><label>Following</label></div>
-                  <div><span id="gh-repos-count">0</span><label>Repos</label></div>
-                </div>
 
-                <div class="card contributions-card" id="gh-contributions">
-                  <div class="card-header">
-                    <h3>Contributions</h3>
-                  </div>
-                  <div class="card-body">
-                    <div id="gh-contrib-note" class="muted">Public contributions chart is shown below. If it’s
-                      unavailable,
-                      we’ll render an approximate heatmap from recent public activity.</div>
-                    <div id="gh-contrib-svg" class="contrib-svg" role="img" aria-label="Contributions calendar"></div>
-                  </div>
+              <div class="card contributions-card" id="gh-contributions">
+                <div class="card-header">
+                  <h3>Contributions</h3>
                 </div>
-
-                <div class="card repos-card" id="gh-repos" data-requires-auth style="display:none;">
-                  <div class="card-header">
-                    <h3>Top Repositories</h3>
-                    <div class="muted small">Sorted by stars</div>
-                  </div>
-                  <div class="card-body">
-                    <div id="gh-repo-list" class="repo-list"></div>
-                  </div>
+                <div class="card-body">
+                  <div id="gh-contrib-note" class="muted">Public contributions chart is shown below. If it's
+                    unavailable, we'll render an approximate heatmap from recent public activity.</div>
+                  <div id="gh-contrib-svg" class="contrib-svg" role="img" aria-label="Contributions calendar"></div>
                 </div>
+              </div>
 
-                <div class="card activity-card" id="gh-activity" data-requires-auth style="display:none;">
-                  <div class="card-header">
-                    <h3>Recent Activity</h3>
-                    <div class="muted small">Public events</div>
-                  </div>
-                  <div class="card-body">
-                    <ul id="gh-activity-list" class="activity-list"></ul>
-                  </div>
+              <div class="card repos-card" id="gh-repos" data-requires-auth style="display:none;">
+                <div class="card-header">
+                  <h3>Top Repositories</h3>
+                  <div class="muted small">Sorted by stars</div>
+                </div>
+                <div class="card-body">
+                  <div id="gh-repo-list" class="repo-list"></div>
+                </div>
+              </div>
+
+              <div class="card activity-card" id="gh-activity" data-requires-auth style="display:none;">
+                <div class="card-header">
+                  <h3>Recent Activity</h3>
+                  <div class="muted small">Public events</div>
+                </div>
+                <div class="card-body">
+                  <ul id="gh-activity-list" class="activity-list"></ul>
                 </div>
               </div>
             </div>
 
-            <div class="cursor-container">
-              <span class="cursor-dot"></span>
-              <span class="cursor-dot"></span>
-              <span class="cursor-dot"></span>
-              <span class="cursor-dot"></span>
-              <span class="cursor-dot"></span>
-              <span class="cursor-dot"></span>
-              <span class="cursor-dot"></span>
-              <span class="cursor-dot"></span>
+            <!-- Right Column: History Tracker -->
+            <div class="history-tracker">
+              <div class="card trend-card">
+                <div class="card-header">
+                  <h3>📈 Metrics Trends</h3>
+                  <div class="muted small">Compared to previous snapshot</div>
+                </div>
+                <div class="card-body">
+                  <div id="metrics-trends">
+                    <div class="muted">Load a dashboard to see trends</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3>📊 Growth Chart</h3>
+                  <div class="muted small">Last 30 snapshots</div>
+                </div>
+                <div class="card-body">
+                  <canvas id="history-chart" class="history-chart"></canvas>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3>🕐 Snapshot History</h3>
+                  <div class="muted small">Recent captures</div>
+                </div>
+                <div class="card-body">
+                  <div id="snapshot-list" class="snapshot-list">
+                    <div class="muted">No snapshots yet</div>
+                  </div>
+                  <button id="clear-history" class="clear-history-btn">Clear History</button>
+                </div>
+              </div>
             </div>
           </div>
+
+          <div class="cursor-container">
+            <span class="cursor-dot"></span>
+            <span class="cursor-dot"></span>
+            <span class="cursor-dot"></span>
+            <span class="cursor-dot"></span>
+            <span class="cursor-dot"></span>
+            <span class="cursor-dot"></span>
+            <span class="cursor-dot"></span>
+            <span class="cursor-dot"></span>
+          </div>
+        </div>
       </section>
+    </main>
 
-      <<<<<<< HEAD=======>>>>>>> origin/feature/advanced-analytics-dashboard
-        <div class="cursor-container">
-          <span class="cursor-dot"></span>
-          <span class="cursor-dot"></span>
-          <span class="cursor-dot"></span>
-          <span class="cursor-dot"></span>
-          <span class="cursor-dot"></span>
-          <span class="cursor-dot"></span>
-          <span class="cursor-dot"></span>
-          <span class="cursor-dot"></span>
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <span class="logo-text">XAYTHEON</span>
+            <p>Empowering the next generation of innovators</p>
+          </div>
         </div>
-  </div>
-  </section>
-
-
-
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <span class="logo-text">XAYTHEON</span>
-          <p>Empowering the next generation of innovators</p>
+        <div class="footer-bottom">
+          <p>&copy; 2026 XAYTHEON. All rights reserved.</p>
         </div>
       </div>
-      <div class="footer-bottom">
-        <p>&copy; 2026 XAYTHEON. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+    </footer>
   </div>
 
+  <!-- Chart.js for visualization -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <!-- Contributions module -->
   <script src="contributions.js"></script>
   <!-- Three.js for mini viewer -->

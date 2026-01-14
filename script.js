@@ -836,8 +836,55 @@ Have fun exploring! 🚀
 // ===================== GitHub Dashboard =====================
 
 // Dashboard request state
-let dashboardState = "idle"; // idle | loading | success | error
+let dashboardState = "idle";
 let requestInFlight = false;
+
+// History Management
+const HISTORY_MANAGER = {
+  storageKey: "xaytheon:gh:history",
+  maxSnapshots: 30,
+
+  saveSnapshot(username, metrics) {
+    const history = this.getHistory(username);
+    const snapshot = {
+      timestamp: Date.now(),
+      date: new Date().toISOString(),
+      ...metrics
+    };
+
+    history.unshift(snapshot);
+    
+    if (history.length > this.maxSnapshots) {
+      history.splice(this.maxSnapshots);
+    }
+
+    const allHistory = JSON.parse(localStorage.getItem(this.storageKey) || "{}");
+    allHistory[username] = history;
+    localStorage.setItem(this.storageKey, JSON.stringify(allHistory));
+
+    return snapshot;
+  },
+
+  getHistory(username) {
+    const allHistory = JSON.parse(localStorage.getItem(this.storageKey) || "{}");
+    return allHistory[username] || [];
+  },
+
+  clearHistory(username) {
+    const allHistory = JSON.parse(localStorage.getItem(this.storageKey) || "{}");
+    if (username) {
+      delete allHistory[username];
+      localStorage.setItem(this.storageKey, JSON.stringify(allHistory));
+    } else {
+      localStorage.removeItem(this.storageKey);
+    }
+  },
+
+  getPreviousSnapshot(username) {
+    const history = this.getHistory(username);
+    return history.length > 1 ? history[1] : null;
+  }
+};
 
 // Cache management with TTL
 const GITHUB_CACHE = {
@@ -870,6 +917,9 @@ const GITHUB_CACHE = {
   },
 };
 
+// Chart instance
+let historyChart = null;
+
 // ---------------- UI STATE HANDLER ----------------
 function setDashboardState(state, message = "") {
   dashboardState = state;
@@ -892,6 +942,31 @@ function setDashboardState(state, message = "") {
     status.textContent = message;
     status.className = `github-status ${state}`;
   }
+}
+
+// Helper to clear dashboard UI
+function clearDashboardUI() {
+  const avatar = document.getElementById("gh-avatar");
+  if (avatar) avatar.src = "";
+  
+  ["gh-name", "gh-login", "gh-bio"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = "";
+  });
+  
+  ["gh-followers", "gh-following", "gh-repos-count"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = "0";
+  });
+  
+  const repoList = document.getElementById("gh-repo-list");
+  if (repoList) repoList.innerHTML = '<div class="muted">Load a dashboard to see repositories</div>';
+  
+  const activityList = document.getElementById("gh-activity-list");
+  if (activityList) activityList.innerHTML = '<li class="activity-item muted">Load a dashboard to see activity</li>';
+  
+  const contribSvg = document.getElementById("gh-contrib-svg");
+  if (contribSvg) contribSvg.innerHTML = '<div class="muted">Load a dashboard to see contributions</div>';
 }
 
 // ---------------- INIT ----------------
@@ -929,13 +1004,46 @@ function initGithubDashboard() {
     loadGithubDashboard(username);
   });
 
+  // Clear Cache button - preserves history
   document.getElementById("gh-clear").addEventListener("click", () => {
     if (requestInFlight) return;
 
+    // Clear credentials and cache, but KEEP history
     localStorage.removeItem("xaytheon:ghCreds");
     GITHUB_CACHE.clear();
     usernameInput.value = "";
-    setDashboardState("idle", "Dashboard cleared.");
+    
+    // Clear the UI display but don't delete history data
+    clearDashboardUI();
+    setDashboardState("idle", "Cache cleared. History preserved.");
+    renderMetricsTrends(null, null);
+    renderHistoryChart([]);
+    renderSnapshotList([]);
+  });
+
+  // Clear History button - only clears snapshots, not cache
+  document.getElementById("clear-history").addEventListener("click", () => {
+    const username = usernameInput.value.trim();
+    
+    if (!username) {
+      // If no username in input, ask user to confirm clearing ALL history
+      if (confirm("Clear history for ALL users? This cannot be undone.")) {
+        HISTORY_MANAGER.clearHistory(); // Clear all
+        renderMetricsTrends(null, null);
+        renderHistoryChart([]);
+        renderSnapshotList([]);
+        setDashboardState("success", "All user history cleared.");
+      }
+    } else {
+      // Clear history for current username only
+      if (confirm(`Clear history for ${username}? This cannot be undone.`)) {
+        HISTORY_MANAGER.clearHistory(username);
+        renderMetricsTrends(null, null);
+        renderHistoryChart([]);
+        renderSnapshotList([]);
+        setDashboardState("success", `History cleared for ${username}.`);
+      }
+    }
   });
 }
 
@@ -983,7 +1091,18 @@ async function loadGithubDashboard(username) {
     };
 
     GITHUB_CACHE.set(cacheKey, data);
+
+    // Save metrics snapshot
+    const metrics = {
+      followers: user.followers,
+      following: user.following,
+      repos: user.public_repos,
+      stars: topRepos.reduce((sum, r) => sum + r.stargazers_count, 0)
+    };
+    HISTORY_MANAGER.saveSnapshot(username, metrics);
+
     renderDashboardData(data, username);
+    updateHistoryVisualization(username);
     setDashboardState("success", "Dashboard loaded successfully ✅");
   } catch (e) {
     setDashboardState(
@@ -995,6 +1114,213 @@ async function loadGithubDashboard(username) {
   }
 }
 
+async function fetchAndCacheDashboard(username) {
+  try {
+    const user = await ghJson(`https://api.github.com/users/${username}`);
+    const repos = await ghJson(`https://api.github.com/users/${username}/repos?per_page=100`);
+    const events = await ghJson(`https://api.github.com/users/${username}/events/public?per_page=25`);
+
+    const topRepos = repos
+      .filter((r) => !r.fork)
+      .sort((a, b) => b.stargazers_count - a.stargazers_count)
+      .slice(0, 8);
+
+    const data = { user, repos: topRepos, events: events.slice(0, 10) };
+    GITHUB_CACHE.set(`dashboard:${username}`, data);
+    
+    // Save metrics snapshot during background refresh
+    const metrics = {
+      followers: user.followers,
+      following: user.following,
+      repos: user.public_repos,
+      stars: topRepos.reduce((sum, r) => sum + r.stargazers_count, 0)
+    };
+    HISTORY_MANAGER.saveSnapshot(username, metrics);
+    
+    // Update visualization if this is the current user
+    const currentUsername = document.getElementById("gh-username")?.value.trim();
+    if (currentUsername === username) {
+      updateHistoryVisualization(username);
+    }
+  } catch (e) {
+    console.warn("Background refresh failed:", e);
+  }
+}
+
+// ---------------- HISTORY VISUALIZATION ----------------
+function updateHistoryVisualization(username) {
+  const history = HISTORY_MANAGER.getHistory(username);
+  const current = history[0];
+  const previous = history[1] || null;
+
+  renderMetricsTrends(current, previous);
+  renderHistoryChart(history);
+  renderSnapshotList(history);
+}
+
+function renderMetricsTrends(current, previous) {
+  const container = document.getElementById("metrics-trends");
+  if (!container) return;
+
+  if (!current) {
+    container.innerHTML = '<div class="muted">Load a dashboard to see trends</div>';
+    return;
+  }
+
+  const metrics = [
+    { label: "Followers", key: "followers" },
+    { label: "Following", key: "following" },
+    { label: "Repositories", key: "repos" },
+    { label: "Total Stars", key: "stars" }
+  ];
+
+  container.innerHTML = metrics.map(metric => {
+    const currentVal = current[metric.key] || 0;
+    const previousVal = previous ? (previous[metric.key] || 0) : currentVal;
+    const change = currentVal - previousVal;
+    
+    let trendClass = "neutral";
+    let trendIcon = "—";
+    let trendText = "No change";
+
+    if (change > 0) {
+      trendClass = "up";
+      trendIcon = "▲";
+      trendText = `+${change}`;
+    } else if (change < 0) {
+      trendClass = "down";
+      trendIcon = "▼";
+      trendText = `${change}`;
+    }
+
+    return `
+      <div class="metric-item">
+        <div class="metric-label">${metric.label}</div>
+        <div class="metric-value-container">
+          <div class="metric-current">${currentVal}</div>
+          ${previous ? `<div class="metric-trend ${trendClass}">${trendIcon} ${trendText}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHistoryChart(history) {
+  const canvas = document.getElementById("history-chart");
+  if (!canvas) return;
+
+  // Destroy previous chart
+  if (historyChart) {
+    historyChart.destroy();
+  }
+
+  if (history.length === 0) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data to display', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  const sortedHistory = [...history].reverse();
+  const labels = sortedHistory.map(s => {
+    const date = new Date(s.timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+
+  const ctx = canvas.getContext('2d');
+  historyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Followers',
+          data: sortedHistory.map(s => s.followers || 0),
+          borderColor: 'rgb(99, 102, 241)',
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          tension: 0.4
+        },
+        {
+          label: 'Repos',
+          data: sortedHistory.map(s => s.repos || 0),
+          borderColor: 'rgb(34, 197, 94)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          tension: 0.4
+        },
+        {
+          label: 'Stars',
+          data: sortedHistory.map(s => s.stars || 0),
+          borderColor: 'rgb(251, 191, 36)',
+          backgroundColor: 'rgba(251, 191, 36, 0.1)',
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: 'rgba(255, 255, 255, 0.8)',
+            font: { size: 11 }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { 
+            color: 'rgba(255, 255, 255, 0.6)',
+            maxRotation: 45,
+            minRotation: 45,
+            font: { size: 10 }
+          },
+          grid: { color: 'rgba(255, 255, 255, 0.1)' }
+        },
+        y: {
+          ticks: { color: 'rgba(255, 255, 255, 0.6)' },
+          grid: { color: 'rgba(255, 255, 255, 0.1)' }
+        }
+      }
+    }
+  });
+}
+
+function renderSnapshotList(history) {
+  const container = document.getElementById("snapshot-list");
+  if (!container) return;
+
+  if (history.length === 0) {
+    container.innerHTML = '<div class="muted">No snapshots yet</div>';
+    return;
+  }
+
+  container.innerHTML = history.slice(0, 10).map(snapshot => {
+    const date = new Date(snapshot.timestamp);
+    const dateStr = date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    return `
+      <div class="snapshot-item">
+        <div class="snapshot-date">${dateStr}</div>
+        <div class="snapshot-metrics">
+          <div>👥 ${snapshot.followers || 0}</div>
+          <div>📦 ${snapshot.repos || 0}</div>
+          <div>⭐ ${snapshot.stars || 0}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 // Helper function to render cached dashboard data
 function renderDashboardData(data, username) {
@@ -1058,6 +1384,9 @@ function renderDashboardData(data, username) {
       }
     };
   }
+
+  // Update history visualization
+  updateHistoryVisualization(username);
 }
 
 async function ghJson(url, headers = {}) {
@@ -1105,14 +1434,8 @@ function renderRepos(repos) {
 
       return `
         <div class="repo-item">
-            <div class="repo-name"><a href="${r.html_url
-        }" target="_blank" rel="noopener" onclick='trackRepoView(${safeRepo})'>${escapeHtml(
-          r.full_name
-        )}</a></div>
-            ${r.description
-          ? `<div class="repo-desc">${escapeHtml(r.description)}</div>`
-          : ""
-        }
+            <div class="repo-name"><a href="${r.html_url}" target="_blank" rel="noopener" onclick='trackRepoView(${safeRepo})'>${escapeHtml(r.full_name)}</a></div>
+            ${r.description ? `<div class="repo-desc">${escapeHtml(r.description)}</div>` : ""}
             <div class="repo-meta">
                 <span>★ ${r.stargazers_count || 0}</span>
                 <span>⑂ ${r.forks_count || 0}</span>
@@ -1120,7 +1443,7 @@ function renderRepos(repos) {
                 <span>Updated ${timeAgo(r.updated_at)}</span>
             </div>
         </div>
-    `
+    `;
     })
     .join("");
 }
@@ -1129,8 +1452,7 @@ function renderActivity(events) {
   const list = document.getElementById("gh-activity-list");
   if (!list) return;
   if (!events || events.length === 0) {
-    list.innerHTML =
-      '<li class="activity-item muted">No recent public activity.</li>';
+    list.innerHTML = '<li class="activity-item muted">No recent public activity.</li>';
     return;
   }
   list.innerHTML = events
@@ -1139,12 +1461,7 @@ function renderActivity(events) {
       const repo = ev.repo?.name || "";
       const when = timeAgo(ev.created_at);
       const what = describeEvent(ev);
-      return `<li class="activity-item"><div>${escapeHtml(what || type)}${repo
-        ? ` in <a href="https://github.com/${repo}" target="_blank" rel="noopener">${escapeHtml(
-          repo
-        )}</a>`
-        : ""
-        }</div><div class="activity-time">${when}</div></li>`;
+      return `<li class="activity-item"><div>${escapeHtml(what || type)}${repo ? ` in <a href="https://github.com/${repo}" target="_blank" rel="noopener">${escapeHtml(repo)}</a>` : ""}</div><div class="activity-time">${when}</div></li>`;
     })
     .join("");
 }
@@ -1154,8 +1471,7 @@ function describeEvent(ev) {
     case "PushEvent":
       return `Pushed ${ev.payload?.commits?.length || 0} commit(s)`;
     case "CreateEvent":
-      return `Created ${ev.payload?.ref_type || "item"} ${ev.payload?.ref || ""
-        }`;
+      return `Created ${ev.payload?.ref_type || "item"} ${ev.payload?.ref || ""}`;
     case "IssuesEvent":
       return `Issue ${ev.payload?.action} #${ev.payload?.issue?.number}`;
     case "PullRequestEvent":
@@ -1190,10 +1506,7 @@ function escapeHtml(str) {
   if (str == null) return "";
   return String(str).replace(
     /[&<>"']/g,
-    (s) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
-      s
-    ])
+    (s) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
   );
 }
 
@@ -1224,12 +1537,9 @@ async function fetchContributionSvg(username, token) {
   if (!res.ok || json.errors) {
     throw new Error(json.errors?.[0]?.message || `GraphQL error ${res.status}`);
   }
-  // Build a simple SVG calendar from the data (compact)
   const cal = json.data.user.contributionsCollection.contributionCalendar;
-  const cell = 10,
-    gap = 2;
-  const rows = 7,
-    cols = cal.weeks.length;
+  const cell = 10, gap = 2;
+  const rows = 7, cols = cal.weeks.length;
   const width = cols * (cell + gap) + gap;
   const height = rows * (cell + gap) + gap + 20;
   let rects = "";
@@ -1237,41 +1547,29 @@ async function fetchContributionSvg(username, token) {
     w.contributionDays.forEach((d, y) => {
       const cx = gap + x * (cell + gap);
       const cy = gap + y * (cell + gap);
-      rects += `<rect x="${cx}" y="${cy}" width="${cell}" height="${cell}" rx="2" ry="2" fill="${d.color || "#ebedf0"
-        }">
-                <title>${d.date}: ${d.contributionCount} contributions</title>
-            </rect>`;
+      rects += `<rect x="${cx}" y="${cy}" width="${cell}" height="${cell}" rx="2" ry="2" fill="${d.color || "#ebedf0"}"><title>${d.date}: ${d.contributionCount} contributions</title></rect>`;
     });
   });
-  const label = `<text x="${gap}" y="${height - 4
-    }" font-size="10" fill="#666">Total: ${cal.totalContributions}</text>`;
+  const label = `<text x="${gap}" y="${height - 4}" font-size="10" fill="#666">Total: ${cal.totalContributions}</text>`;
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img">${rects}${label}</svg>`;
 }
 
-// Build an approximate heatmap from public events (tokenless fallback)
 function renderEventHeatmap(events) {
   if (!Array.isArray(events) || events.length === 0)
     return '<div class="muted">No recent public activity.</div>';
 
-  // Count events per day for the past ~90 days (limited by API)
   const today = new Date();
   const daysBack = 90;
   const start = new Date(today.getTime() - daysBack * 24 * 3600 * 1000);
 
-  // Normalize to midnight UTC for consistency
-  const toKey = (d) =>
-    new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-      .toISOString()
-      .slice(0, 10);
+  const toKey = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString().slice(0, 10);
   const counts = new Map();
 
-  // Seed zero counts for all days in range
   for (let i = 0; i <= daysBack; i++) {
     const d = new Date(start.getTime() + i * 24 * 3600 * 1000);
     counts.set(toKey(new Date(d.toISOString())), 0);
   }
 
-  // Tally events by created_at date
   for (const ev of events) {
     if (!ev.created_at) continue;
     const d = new Date(ev.created_at);
@@ -1280,16 +1578,12 @@ function renderEventHeatmap(events) {
     counts.set(k, (counts.get(k) || 0) + 1);
   }
 
-  // Prepare grid data by weeks (columns) and weekdays (rows)
-  const cell = 10,
-    gap = 2;
+  const cell = 10, gap = 2;
   const dates = Array.from(counts.keys()).sort();
-  if (dates.length === 0)
-    return '<div class="muted">No recent public activity.</div>';
+  if (dates.length === 0) return '<div class="muted">No recent public activity.</div>';
 
-  // Align start to Sunday for calendar style
   const firstDate = new Date(dates[0] + "T00:00:00Z");
-  const offset = firstDate.getUTCDay(); // 0=Sun
+  const offset = firstDate.getUTCDay();
   const totalDays = dates.length + offset;
   const cols = Math.ceil(totalDays / 7);
 
@@ -1306,7 +1600,6 @@ function renderEventHeatmap(events) {
   const height = 7 * (cell + gap) + gap + 20;
   let rects = "";
 
-  // Iterate by column/week
   for (let x = 0; x < cols; x++) {
     for (let y = 0; y < 7; y++) {
       const dayIndex = x * 7 + y - offset;
@@ -1315,15 +1608,10 @@ function renderEventHeatmap(events) {
       const v = counts.get(d) || 0;
       const cx = gap + x * (cell + gap);
       const cy = gap + y * (cell + gap);
-      rects += `<rect x="${cx}" y="${cy}" width="${cell}" height="${cell}" rx="2" ry="2" fill="${colorFor(
-        v
-      )}">
-                <title>${d}: ${v} event(s)</title>
-            </rect>`;
+      rects += `<rect x="${cx}" y="${cy}" width="${cell}" height="${cell}" rx="2" ry="2" fill="${colorFor(v)}"><title>${d}: ${v} event(s)</title></rect>`;
     }
   }
-  const label = `<text x="${gap}" y="${height - 4
-    }" font-size="10" fill="#666">Approx. last ${daysBack} days</text>`;
+  const label = `<text x="${gap}" y="${height - 4}" font-size="10" fill="#666">Approx. last ${daysBack} days</text>`;
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img">${rects}${label}</svg>`;
 }
 
