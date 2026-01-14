@@ -220,6 +220,7 @@
   <div class="auth-card">
     <div class="auth-title">Sign in</div>
     <div class="auth-sub">Sign in using your email and password</div>
+    <div id="auth-error" class="auth-error" aria-live="assertive"></div>
 
     <form id="login-form" class="auth-form" autocomplete="on">
       <label for="login-email">Email</label>
@@ -427,18 +428,20 @@
         setTimeout(() => {
           window.location.href = "index.html";
         }, 100);
-      } catch (err) {
-        setLoading(false);
-        if (err.message.includes("fetch") || err.message.includes("network")) {
-          showError("Network error. Please check your connection and try again.");
-        } else if (err.message.includes("credentials")) {
-          emailEl.classList.add("input-error");
-          passwordEl.classList.add("input-error");
-          showError("Invalid email or password");
-        } else {
-          showError(err.message || "Login failed. Please try again.");
-        }
-      }
+      } 
+      catch (err) {
+  setLoading(false);
+
+  const message = getAuthErrorMessage(err);
+  showError(message);
+
+  // Highlight fields for credential-related errors
+  if (err.code === "INVALID_CREDENTIALS") {
+    emailEl.classList.add("input-error");
+    passwordEl.classList.add("input-error");
+  }
+}
+
     });
   </script>
 </body>
