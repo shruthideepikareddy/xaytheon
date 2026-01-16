@@ -12,6 +12,7 @@ const achievementsRoutes = require("./routes/achievements.routes");
 const pushRoutes = require("./routes/push.routes");
 const compareRoutes = require("./routes/compare.routes");
 const collabRoutes = require("./routes/collab.routes");
+const heatmapRoutes = require("./routes/heatmap.routes");
 
 const app = express();
 
@@ -101,6 +102,7 @@ app.use("/api/achievements", achievementsRoutes);
 app.use("/api/push", pushRoutes);
 app.use("/api/compare", compareRoutes);
 app.use("/api/collab", collabRoutes);
+app.use("/api/heatmap", heatmapRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Error:", err);
